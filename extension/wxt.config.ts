@@ -40,10 +40,10 @@ export default defineConfig({
     description: 'Save pages, summarize the queue into one email on demand.',
     version: '0.0.1',
     icons: {
-      16: 'icons/icon16.png',
-      32: 'icons/icon32.png',
-      48: 'icons/icon48.png',
-      128: 'icons/icon128.png',
+      16: 'icon/16.png',
+      32: 'icon/32.png',
+      48: 'icon/48.png',
+      128: 'icon/128.png',
     },
     action: {
       default_title: 'TLDR',
