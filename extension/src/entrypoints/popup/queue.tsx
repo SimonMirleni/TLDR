@@ -1,14 +1,7 @@
 import { sendNewsletter } from '@/lib/api';
 import type { DetectedTab } from '@/lib/detected-tabs';
 import { removeDetectedTab, syncBadge } from '@/lib/detected-tabs';
-import {
-  type ReadingListEntry,
-  captureReadingListEntry,
-  getImportableReadingListEntries,
-  getRemoveReadingListAfterSend,
-  listUnreadReadingListEntries,
-  removeReadingListUrls,
-} from '@/lib/reading-list';
+import { getRemoveReadingListAfterSend, removeReadingListUrls } from '@/lib/reading-list';
 import { scrapeActiveTab, scrapeTab } from '@/lib/scrape';
 import { supabase } from '@/lib/supabase';
 import { dismissUrl, markSaved } from '@/lib/suppress';
@@ -24,10 +17,9 @@ export function renderQueue() {
 
 function Queue() {
   const [rows, setRows] = useState<QueueRow[]>([]);
-  const [importableEntries, setImportableEntries] = useState<ReadingListEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [suggested, setSuggested] = useState<DetectedTab[]>([]);
-  const [busy, setBusy] = useState<'add' | 'import' | 'send' | null>(null);
+  const [busy, setBusy] = useState<'add' | 'send' | null>(null);
   const [status, setStatus] = useState<{ text: string; kind: StatusKind }>({ text: '', kind: '' });
 
   const refresh = useCallback(async () => {
@@ -44,20 +36,7 @@ function Queue() {
       setLoading(false);
       return;
     }
-    const nextRows = data ?? [];
-    setRows(nextRows);
-    try {
-      const readingListEntries = await listUnreadReadingListEntries();
-      setImportableEntries(
-        getImportableReadingListEntries(
-          readingListEntries,
-          nextRows.map((row) => row.url),
-        ),
-      );
-    } catch (err) {
-      console.warn('[reading-list] load failed', err);
-      setImportableEntries([]);
-    }
+    setRows(data ?? []);
     setLoading(false);
   }, []);
 
@@ -81,48 +60,6 @@ function Queue() {
       if (error) throw new Error(error.message);
       await markSaved(url);
       setStatus({ text: 'Saved.', kind: 'success' });
-      await refresh();
-    } catch (err) {
-      setStatus({ text: err instanceof Error ? err.message : String(err), kind: 'error' });
-    } finally {
-      setBusy(null);
-    }
-  };
-
-  const handleImportReadingList = async () => {
-    setBusy('import');
-    setStatus({ text: 'Importing reading list…', kind: '' });
-
-    let imported = 0;
-    let failed = 0;
-
-    try {
-      const readingListEntries = await listUnreadReadingListEntries();
-      const entries = getImportableReadingListEntries(
-        readingListEntries,
-        rows.map((row) => row.url),
-      );
-      const skipped = readingListEntries.length - entries.length;
-
-      for (const entry of entries) {
-        try {
-          const content = await captureReadingListEntry(entry);
-          const { error } = await supabase.from('resources').insert({
-            url: entry.url,
-            content,
-          } as never);
-          if (error) throw new Error(error.message);
-          imported += 1;
-        } catch (err) {
-          console.warn('[reading-list] import failed', entry.url, err);
-          failed += 1;
-        }
-      }
-
-      setStatus({
-        text: `Imported ${imported}. Skipped ${skipped}. Failed ${failed}.`,
-        kind: failed > 0 ? 'error' : 'success',
-      });
       await refresh();
     } catch (err) {
       setStatus({ text: err instanceof Error ? err.message : String(err), kind: 'error' });
@@ -195,18 +132,6 @@ function Queue() {
         <button type="button" id="add" class="primary" disabled={busy !== null} onClick={handleAdd}>
           {busy === 'add' ? 'Capturing...' : 'Add current page'}
         </button>
-        {importableEntries.length > 0 ? (
-          <button
-            type="button"
-            id="import"
-            disabled={busy !== null}
-            onClick={handleImportReadingList}
-          >
-            {busy === 'import'
-              ? 'Importing...'
-              : `Import reading list (${importableEntries.length})`}
-          </button>
-        ) : null}
         <button type="button" id="send" disabled={busy !== null} onClick={handleSend}>
           {busy === 'send' ? 'Sending...' : 'Send newsletter'}
         </button>

@@ -1,8 +1,15 @@
 import { LOCAL_SETTINGS_DEFAULTS, getLocalSettings, setLocalSettings } from '@/lib/local-settings';
-import { getRemoveReadingListAfterSend, setRemoveReadingListAfterSend } from '@/lib/reading-list';
+import {
+  type ReadingListEntry,
+  captureReadingListEntry,
+  getImportableReadingListEntries,
+  getRemoveReadingListAfterSend,
+  listUnreadReadingListEntries,
+  setRemoveReadingListAfterSend,
+} from '@/lib/reading-list';
 import { supabase } from '@/lib/supabase';
 import { DEFAULT_RESOURCES_PER_NEWSLETTER, DEFAULT_TONE_PROMPT, type Settings } from '@rld/db';
-import { useEffect, useState } from 'preact/hooks';
+import { useCallback, useEffect, useState } from 'preact/hooks';
 
 type SettingsForm = Pick<Settings, 'tone_prompt' | 'resources_per_newsletter'>;
 type LocalForm = { dwellTimeMin: number; inactiveTimeoutMin: number };
@@ -24,7 +31,29 @@ function SettingsPanel() {
   });
   const [status, setStatus] = useState<{ text: string; kind: StatusKind }>({ text: '', kind: '' });
   const [saving, setSaving] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [importableEntries, setImportableEntries] = useState<ReadingListEntry[]>([]);
   const [removeReadingListAfterSend, setRemoveReadingListAfterSendState] = useState(false);
+
+  const refreshImportableEntries = useCallback(async () => {
+    try {
+      const [readingListEntries, resources] = await Promise.all([
+        listUnreadReadingListEntries(),
+        supabase.from('resources').select('url').eq('status', 'pending'),
+      ]);
+
+      if (resources.error) throw new Error(resources.error.message);
+      setImportableEntries(
+        getImportableReadingListEntries(
+          readingListEntries,
+          (resources.data ?? []).map((row) => row.url),
+        ),
+      );
+    } catch (err) {
+      console.warn('[reading-list] load failed', err);
+      setImportableEntries([]);
+    }
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -40,13 +69,14 @@ function SettingsPanel() {
       }
       setUser({ id: currentUser.id, email: currentUser.email });
 
-      const [remoteData, local] = await Promise.all([
+      const [remoteData, local, removeAfterSend] = await Promise.all([
         supabase
           .from('settings')
           .select('tone_prompt, resources_per_newsletter')
           .eq('user_id', currentUser.id)
           .maybeSingle(),
         getLocalSettings(),
+        getRemoveReadingListAfterSend(),
       ]);
 
       if (cancelled) return;
@@ -59,10 +89,8 @@ function SettingsPanel() {
         dwellTimeMin: local.dwellTimeMin,
         inactiveTimeoutMin: local.inactiveTimeoutMin,
       });
-      const removeAfterSend = await getRemoveReadingListAfterSend();
-      if (!cancelled) {
-        setRemoveReadingListAfterSendState(removeAfterSend);
-      }
+      setRemoveReadingListAfterSendState(removeAfterSend);
+      void refreshImportableEntries();
     };
 
     void loadSettings();
@@ -70,7 +98,52 @@ function SettingsPanel() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [refreshImportableEntries]);
+
+  const handleImportReadingList = async () => {
+    setImporting(true);
+    setStatus({ text: 'Importing reading list…', kind: '' });
+
+    let imported = 0;
+    let failed = 0;
+
+    try {
+      const readingListEntries = await listUnreadReadingListEntries();
+      const resources = await supabase.from('resources').select('url').eq('status', 'pending');
+      if (resources.error) throw new Error(resources.error.message);
+
+      const entries = getImportableReadingListEntries(
+        readingListEntries,
+        (resources.data ?? []).map((row) => row.url),
+      );
+      const skipped = readingListEntries.length - entries.length;
+
+      for (const entry of entries) {
+        try {
+          const content = await captureReadingListEntry(entry);
+          const { error } = await supabase.from('resources').insert({
+            url: entry.url,
+            content,
+          } as never);
+          if (error) throw new Error(error.message);
+          imported += 1;
+        } catch (err) {
+          console.warn('[reading-list] import failed', entry.url, err);
+          failed += 1;
+        }
+      }
+
+      setStatus({
+        text: `Imported ${imported}. Skipped ${skipped}. Failed ${failed}.`,
+        kind: failed > 0 ? 'error' : 'success',
+      });
+      await refreshImportableEntries();
+    } catch (err) {
+      setStatus({ text: err instanceof Error ? err.message : String(err), kind: 'error' });
+    } finally {
+      setImporting(false);
+    }
+  };
 
   const handleSave = async () => {
     if (!user) return;
@@ -195,9 +268,21 @@ function SettingsPanel() {
         />
         <span>Remove from Chrome Reading List after newsletter is sent</span>
       </label>
-      <button type="button" id="save" class="primary" disabled={saving} onClick={handleSave}>
-        {saving ? 'Saving...' : 'Save'}
-      </button>
+      <div class="row">
+        {importableEntries.length > 0 ? (
+          <button
+            type="button"
+            id="import"
+            disabled={saving || importing}
+            onClick={handleImportReadingList}
+          >
+            {importing ? 'Importing...' : `Import reading list (${importableEntries.length})`}
+          </button>
+        ) : null}
+        <button type="button" id="save" class="primary" disabled={saving} onClick={handleSave}>
+          {saving ? 'Saving...' : 'Save'}
+        </button>
+      </div>
       <p id="status" class={`status${status.kind ? ` ${status.kind}` : ''}`}>
         {status.text}
       </p>
