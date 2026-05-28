@@ -12,7 +12,7 @@ function renderFatal(message: string): void {
   if (!root) return;
   root.innerHTML = `
     <section class="shell narrow">
-      <h1>ReadLater Digest</h1>
+      <h1>TLDR</h1>
       <p class="status error">${escapeHtml(message)}</p>
     </section>
   `;

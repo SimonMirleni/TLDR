@@ -303,6 +303,24 @@ textarea {
   min-height: 88px;
 }
 
+input[type="checkbox"] {
+  accent-color: var(--fg);
+  margin: 1px 0 0;
+}
+
+.checkbox-field {
+  align-items: flex-start;
+  color: var(--fg);
+  display: flex;
+  font-size: 12px;
+  font-weight: 400;
+  gap: 8px;
+  letter-spacing: 0;
+  line-height: 1.45;
+  margin-bottom: 18px;
+  text-transform: none;
+}
+
 /* ── Loading state ───────────────────────────────────── */
 .loading {
   align-items: center;

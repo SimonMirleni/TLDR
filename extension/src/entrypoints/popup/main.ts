@@ -13,7 +13,7 @@ function renderFatal(message: string): void {
   const root = document.getElementById('app');
   if (!root) return;
   root.innerHTML = `
-    <h1>ReadLater Digest</h1>
+    <h1>TLDR</h1>
     <p class="status error">${escapeHtml(message)}</p>
   `;
 }

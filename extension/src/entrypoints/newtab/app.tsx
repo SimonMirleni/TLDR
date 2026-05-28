@@ -61,7 +61,7 @@ function SignedOut() {
 
   return (
     <section class="shell narrow hero-card">
-      <p class="eyebrow">ReadLater Digest</p>
+      <p class="eyebrow">TLDR</p>
       <h1>Your reading list, every new tab.</h1>
       <p class="lead">Sign in to see pending reads as quick preview cards.</p>
       <button type="button" class="primary" disabled={signingIn} onClick={handleSignIn}>
@@ -106,7 +106,7 @@ function SignedIn({ email }: { email: string }) {
     <section class="shell">
       <header class="topbar">
         <div>
-          <p class="eyebrow">ReadLater Digest</p>
+          <p class="eyebrow">TLDR</p>
           <h1>Pending reads</h1>
         </div>
         <div class="account">
