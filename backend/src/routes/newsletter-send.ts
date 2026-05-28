@@ -47,14 +47,14 @@ export async function newsletterSend(c: Context<AuthedEnv>): Promise<Response> {
   }
 
   // 3. LLM with timeout.
-  let html: string;
+  let digest: import('../services/llm.js').DigestOutput;
   try {
     const result = await summarizeArticles(
       tonePrompt,
       resources.map((r) => ({ id: r.id, url: r.url, content: r.content })),
       AbortSignal.timeout(LLM_TIMEOUT_MS),
     );
-    html = result.html;
+    digest = result.digest;
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error('[newsletter] LLM failed', msg);
@@ -71,7 +71,8 @@ export async function newsletterSend(c: Context<AuthedEnv>): Promise<Response> {
     emailId = await sendNewsletterEmail({
       to: email,
       subject: `Your ReadLater digest — ${resources.length} article${resources.length === 1 ? '' : 's'}`,
-      html,
+      digest,
+      articleCount: resources.length,
     });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);

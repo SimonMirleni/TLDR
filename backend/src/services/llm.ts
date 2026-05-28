@@ -1,17 +1,37 @@
 import { createOpenAI } from '@ai-sdk/openai';
-import { generateText } from 'ai';
+import { generateObject } from 'ai';
+import { z } from 'zod';
 import { env } from '../env.js';
 
 const openai = createOpenAI({ apiKey: env.OPENAI_API_KEY });
-const MODEL = 'gpt-5.5';
+const MODEL = 'gpt-4o';
 
-// Rough char→token estimator. OpenAI's average is ~4 chars/token for English.
-// We aim to stay under ~100K input tokens to leave headroom below the 128K context.
 const MAX_INPUT_TOKENS = 100_000;
 const CHARS_PER_TOKEN = 4;
 const MAX_INPUT_CHARS = MAX_INPUT_TOKENS * CHARS_PER_TOKEN;
 
-const BASE_SYSTEM = `Generate a single combined newsletter summarizing the following articles. Each article is delimited by '--- ARTICLE N (url: ...) ---'. Output an HTML body fragment using h2, h3, p, ul/li, a. Do NOT wrap in <html> or <body>. Use the article URL as the href for a heading link per article.`;
+const BASE_SYSTEM = `You are a newsletter writer. Summarize the provided articles into a digest. For each article return:
+- title: a clear, engaging title
+- url: the original article URL (copy it exactly)
+- summary: 2-3 sentences capturing the core idea
+- keyPoints: 2-4 concise bullet points (no markdown, plain text)
+
+Each article is delimited by '--- ARTICLE N (url: ...) ---'.`;
+
+const DigestSchema = z.object({
+  articles: z
+    .array(
+      z.object({
+        title: z.string(),
+        url: z.string(),
+        summary: z.string(),
+        keyPoints: z.array(z.string()).min(1).max(4),
+      }),
+    )
+    .min(1),
+});
+
+export type DigestOutput = z.infer<typeof DigestSchema>;
 
 export type ArticleInput = { id: string; url: string; content: string };
 
@@ -50,18 +70,19 @@ export async function summarizeArticles(
   tonePrompt: string,
   articles: ArticleInput[],
   signal: AbortSignal,
-): Promise<{ html: string; truncated: boolean }> {
+): Promise<{ digest: DigestOutput; truncated: boolean }> {
   const { system, user, truncated } = buildPrompt(tonePrompt, articles);
   if (truncated) {
     console.warn(`[llm] truncated content (articles=${articles.length}) to fit context window`);
   }
 
-  const { text } = await generateText({
+  const { object } = await generateObject({
     model: openai(MODEL),
+    schema: DigestSchema,
     system,
     messages: [{ role: 'user', content: user }],
     abortSignal: signal,
   });
 
-  return { html: text, truncated };
+  return { digest: object, truncated };
 }
