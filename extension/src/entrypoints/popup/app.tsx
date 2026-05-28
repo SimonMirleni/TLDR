@@ -63,7 +63,7 @@ function SignedOut() {
   };
 
   return (
-    <>
+    <div class="sign-in-panel">
       <h1>ReadLater Digest</h1>
       <p class="muted">Sign in with Google to start saving pages.</p>
       <button type="button" id="signin" class="primary" disabled={signingIn} onClick={handleSignIn}>
@@ -81,7 +81,7 @@ function SignedOut() {
         <span class="debug-label">Google Client ID</span>
         <code>{manifestClientId}</code>
       </details>
-    </>
+    </div>
   );
 }
 

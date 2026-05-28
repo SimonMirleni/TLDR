@@ -151,7 +151,7 @@ function ResourceGrid({ resources, loading }: { resources: NewTabResource[]; loa
           <h2>{displayTitle(resource.url)}</h2>
           <p>{buildExcerpt(resource.content)}</p>
           <a href={resource.url} target="_blank" rel="noreferrer">
-            Open original
+            Open original →
           </a>
         </article>
       ))}
