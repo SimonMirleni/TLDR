@@ -7,10 +7,12 @@
     "dev": "wxt",
     "build": "wxt build",
     "zip": "wxt zip",
+    "lint": "biome check .",
     "typecheck": "wxt prepare && tsc --noEmit"
   },
   "dependencies": {
     "@rld/db": "workspace:*",
+    "preact": "^10.27.2",
     "@supabase/supabase-js": "^2.45.4"
   },
   "devDependencies": {
