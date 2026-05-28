@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { env } from '../env.js';
 
 const openai = createOpenAI({ apiKey: env.OPENAI_API_KEY });
-const MODEL = 'gpt-4o';
+const MODEL = 'gpt-5.5';
 
 const MAX_INPUT_TOKENS = 100_000;
 const CHARS_PER_TOKEN = 4;
