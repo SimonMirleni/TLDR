@@ -67,7 +67,7 @@ function SignedOut() {
       <h1>ReadLater Digest</h1>
       <p class="muted">Sign in with Google to start saving pages.</p>
       <button type="button" id="signin" class="primary" disabled={signingIn} onClick={handleSignIn}>
-        Sign in with Google
+        {signingIn ? 'Signing in...' : 'Sign in with Google'}
       </button>
       <p id="status" class={`status${status.kind ? ` ${status.kind}` : ''}`}>
         {status.text}

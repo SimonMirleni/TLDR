@@ -80,10 +80,10 @@ function Queue() {
     <>
       <div class="row">
         <button type="button" id="add" class="primary" disabled={busy !== null} onClick={handleAdd}>
-          Add current page
+          {busy === 'add' ? 'Capturing...' : 'Add current page'}
         </button>
         <button type="button" id="send" disabled={busy !== null} onClick={handleSend}>
-          Send newsletter
+          {busy === 'send' ? 'Sending...' : 'Send newsletter'}
         </button>
       </div>
       <p id="status" class={`status${status.kind ? ` ${status.kind}` : ''}`}>
@@ -98,7 +98,7 @@ function QueueList({ rows, loading }: { rows: QueueRow[]; loading: boolean }) {
   if (loading) {
     return (
       <ul id="list" class="queue-list">
-        <li class="empty">Loading…</li>
+        <li class="empty loading-row">Loading...</li>
       </ul>
     );
   }

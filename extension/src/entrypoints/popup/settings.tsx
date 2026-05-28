@@ -122,7 +122,7 @@ function SettingsPanel() {
         />
       </div>
       <button type="button" id="save" class="primary" disabled={saving} onClick={handleSave}>
-        Save
+        {saving ? 'Saving...' : 'Save'}
       </button>
       <p id="status" class={`status${status.kind ? ` ${status.kind}` : ''}`}>
         {status.text}
