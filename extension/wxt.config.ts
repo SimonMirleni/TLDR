@@ -45,6 +45,9 @@ export default defineConfig({
       scopes: ['openid', 'email', 'profile'],
     },
     host_permissions: ['<all_urls>'],
+    chrome_url_overrides: {
+      newtab: 'newtab.html',
+    },
     // `key` locks the extension ID across unpacked reloads so the OAuth client ID
     // registered in Google Cloud keeps matching. Generate one with:
     //   openssl rand -base64 1024 | tr -d '\n' | tr '+/' '-_' | cut -c1-1024
