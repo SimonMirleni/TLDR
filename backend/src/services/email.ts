@@ -1,5 +1,9 @@
+import { render } from '@react-email/render';
+import * as React from 'react';
 import { Resend } from 'resend';
+import { DigestEmail } from '../emails/digest.js';
 import { env } from '../env.js';
+import type { DigestOutput } from './llm.js';
 
 const resend = new Resend(env.RESEND_API_KEY);
 
@@ -11,14 +15,31 @@ const FROM = 'ReadLater Digest <onboarding@resend.dev>';
 export async function sendNewsletterEmail(opts: {
   to: string;
   subject: string;
-  html: string;
+  digest: DigestOutput;
+  articleCount: number;
 }): Promise<string> {
+  const date = new Date().toLocaleDateString('en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+
+  const html = await render(
+    React.createElement(DigestEmail, {
+      digest: opts.digest,
+      date,
+      articleCount: opts.articleCount,
+    }),
+  );
+
   const { data, error } = await resend.emails.send({
     from: FROM,
     to: opts.to,
     subject: opts.subject,
-    html: opts.html,
+    html,
   });
+
   if (error) {
     throw new Error(`Resend failed: ${error.message ?? JSON.stringify(error)}`);
   }

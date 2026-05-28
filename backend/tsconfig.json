@@ -8,7 +8,9 @@
     "lib": ["ES2022"],
     "types": ["node"],
     "noEmit": false,
-    "declaration": false
+    "declaration": false,
+    "jsx": "react-jsx",
+    "jsxImportSource": "react"
   },
   "include": ["src/**/*"]
 }
