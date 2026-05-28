@@ -51,7 +51,7 @@ Exact scripts will be wired up when `package.json` files are created; keep them 
 - **FIFO selection lives in the backend.** `POST /newsletter/send` accepts `{}` — never accept resource IDs from the popup. Selection is always `WHERE user_id=? AND status='pending' ORDER BY created_at ASC LIMIT N`.
 - **Email is non-editable.** The recipient is always the OAuth email; do not expose a settings field for it.
 - **Never trim content at save time** (FR-2.3). If the LLM context window forces truncation, do it only in the send path, in-memory — never mutate stored `content`.
-- **`consumed` is terminal in V1.** Consumed resources are not re-sent and not re-activated.
+- `**consumed` is terminal in V1.** Consumed resources are not re-sent and not re-activated.
 - **"No pending" is a success.** Respond `200 { sent:false, reason:'no_pending' }`, not a 4xx.
 - **Required index** on `resources(user_id, status, created_at)` — the FIFO query depends on it.
 - **OAuth scopes:** `email`, `profile` only.
@@ -72,3 +72,4 @@ All routes require `Authorization: Bearer <google_oauth_token>`.
 - `POST /newsletter/send` `{}` → `200 { sent:true, emailId, consumedCount }` or `200 { sent:false, reason:'no_pending' }`
 - `GET /settings` → `{ tonePrompt, resourcesPerNewsletter }`
 - `PUT /settings` `{ tonePrompt?, resourcesPerNewsletter? }` → updated settings
+

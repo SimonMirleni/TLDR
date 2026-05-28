@@ -1,4 +1,4 @@
-import { getSession, signInWithGoogle, signOut } from '@/lib/auth';
+import { getSession, signOut } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import { renderQueue } from './queue';
 import { renderSettings } from './settings';
@@ -39,13 +39,28 @@ function renderSignedOut(): void {
     const btn = e.currentTarget as HTMLButtonElement;
     btn.disabled = true;
     status.className = 'status';
-    status.textContent = 'Opening Google…';
+    status.textContent = 'Opening Google… (this popup may close — reopen it after signing in)';
     try {
-      await signInWithGoogle();
-      await render();
+      // Auth runs in the background service worker so it survives the popup
+      // closing when the OAuth window steals focus.
+      const response: { ok: boolean; error?: string } = await chrome.runtime.sendMessage({
+        type: 'SIGN_IN',
+      });
+      if (response?.ok) {
+        await render();
+      } else {
+        throw new Error(response?.error ?? 'Sign-in failed');
+      }
     } catch (err) {
-      status.className = 'status error';
-      status.textContent = err instanceof Error ? err.message : String(err);
+      // "Could not establish connection" means the popup closed mid-flow and
+      // the background still completed auth — reopen the popup to see the result.
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg.includes('Could not establish connection')) {
+        status.textContent = 'Popup closed during sign-in — reopen to continue.';
+      } else {
+        status.className = 'status error';
+        status.textContent = msg;
+      }
       btn.disabled = false;
     }
   });

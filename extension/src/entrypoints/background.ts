@@ -1,11 +1,22 @@
 import { defineBackground } from 'wxt/sandbox';
+import { signInWithGoogle } from '@/lib/auth';
 
-// The background service worker exists primarily to keep the extension alive and
-// to hold the persisted Supabase session (chrome.storage). All auth and DB calls
-// happen from the popup, which imports the same supabase client and storage
-// adapter — chrome.storage is shared across contexts so the session is visible
-// to both popup and background.
+// Auth runs here, not in the popup, because Chrome closes the popup when the
+// OAuth window steals focus — killing any in-flight JS. The service worker
+// survives focus changes, so the OAuth round-trip completes reliably.
 export default defineBackground(() => {
-  // No-op for now. Reserved for future message routing if popup-content traffic
-  // grows beyond direct tabs.sendMessage.
+  chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+    if (message?.type === 'SIGN_IN') {
+      signInWithGoogle()
+        .then(() => {
+          sendResponse({ ok: true });
+        })
+        .catch((err: unknown) => {
+          const error = err instanceof Error ? err.message : String(err);
+          console.error('[background] sign-in failed:', error);
+          sendResponse({ ok: false, error });
+        });
+      return true; // keep message channel open for async response
+    }
+  });
 });
