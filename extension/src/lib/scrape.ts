@@ -15,6 +15,23 @@ function isRestricted(url: string | undefined): boolean {
   return RESTRICTED_PREFIXES.some((p) => url.startsWith(p));
 }
 
+export async function scrapeTab(tabId: number, tabUrl: string): Promise<ScrapeResponse> {
+  if (isRestricted(tabUrl)) throw new Error('This page cannot be scraped.');
+  try {
+    const response = (await chrome.tabs.sendMessage(tabId, { type: 'SCRAPE' })) as
+      | ScrapeResponse
+      | undefined;
+    if (!response?.content) throw new Error('Page had no text content.');
+    return response;
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (msg.includes('Receiving end does not exist')) {
+      throw new Error('Page not ready — reload the tab and try again.');
+    }
+    throw err;
+  }
+}
+
 export async function scrapeActiveTab(): Promise<ScrapeResponse> {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   if (!tab?.id || isRestricted(tab.url)) {

@@ -40,15 +40,15 @@ export default defineConfig({
     description: 'Save pages, summarize the queue into one email on demand.',
     version: '0.0.1',
     icons: {
-      16: '/icon/16.png',
-      32: '/icon/32.png',
-      48: '/icon/48.png',
-      128: '/icon/128.png',
+      16: 'icons/icon16.png',
+      32: 'icons/icon32.png',
+      48: 'icons/icon48.png',
+      128: 'icons/icon128.png',
     },
     action: {
       default_title: 'TLDR',
     },
-    permissions: ['identity', 'activeTab', 'scripting', 'storage', 'tabs', 'readingList'],
+    permissions: ['identity', 'activeTab', 'scripting', 'storage', 'tabs', 'readingList', 'alarms'],
     oauth2: {
       client_id: googleClientId,
       scopes: ['openid', 'email', 'profile'],

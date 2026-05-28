@@ -1,9 +1,11 @@
+import { LOCAL_SETTINGS_DEFAULTS, getLocalSettings, setLocalSettings } from '@/lib/local-settings';
 import { getRemoveReadingListAfterSend, setRemoveReadingListAfterSend } from '@/lib/reading-list';
 import { supabase } from '@/lib/supabase';
 import { DEFAULT_RESOURCES_PER_NEWSLETTER, DEFAULT_TONE_PROMPT, type Settings } from '@rld/db';
 import { useEffect, useState } from 'preact/hooks';
 
 type SettingsForm = Pick<Settings, 'tone_prompt' | 'resources_per_newsletter'>;
+type LocalForm = { dwellTimeMin: number; inactiveTimeoutMin: number };
 type StatusKind = 'error' | 'success' | '';
 
 export function renderSettings() {
@@ -15,6 +17,10 @@ function SettingsPanel() {
   const [form, setForm] = useState<SettingsForm>({
     tone_prompt: DEFAULT_TONE_PROMPT,
     resources_per_newsletter: DEFAULT_RESOURCES_PER_NEWSLETTER,
+  });
+  const [localForm, setLocalForm] = useState<LocalForm>({
+    dwellTimeMin: LOCAL_SETTINGS_DEFAULTS.dwellTimeMin,
+    inactiveTimeoutMin: LOCAL_SETTINGS_DEFAULTS.inactiveTimeoutMin,
   });
   const [status, setStatus] = useState<{ text: string; kind: StatusKind }>({ text: '', kind: '' });
   const [saving, setSaving] = useState(false);
@@ -34,21 +40,25 @@ function SettingsPanel() {
       }
       setUser({ id: currentUser.id, email: currentUser.email });
 
-      const { data, error } = await supabase
-        .from('settings')
-        .select('tone_prompt, resources_per_newsletter')
-        .eq('user_id', currentUser.id)
-        .maybeSingle();
+      const [remoteData, local] = await Promise.all([
+        supabase
+          .from('settings')
+          .select('tone_prompt, resources_per_newsletter')
+          .eq('user_id', currentUser.id)
+          .maybeSingle(),
+        getLocalSettings(),
+      ]);
 
       if (cancelled) return;
-      if (error) {
-        setStatus({ text: `Failed to load: ${error.message}`, kind: 'error' });
+      if (remoteData.error) {
+        setStatus({ text: `Failed to load: ${remoteData.error.message}`, kind: 'error' });
         return;
       }
-      if (data) {
-        setForm(data);
-      }
-
+      if (remoteData.data) setForm(remoteData.data);
+      setLocalForm({
+        dwellTimeMin: local.dwellTimeMin,
+        inactiveTimeoutMin: local.inactiveTimeoutMin,
+      });
       const removeAfterSend = await getRemoveReadingListAfterSend();
       if (!cancelled) {
         setRemoveReadingListAfterSendState(removeAfterSend);
@@ -69,6 +79,14 @@ function SettingsPanel() {
       setStatus({ text: 'Resources per newsletter must be an integer ≥ 1.', kind: 'error' });
       return;
     }
+    if (!Number.isInteger(localForm.dwellTimeMin) || localForm.dwellTimeMin < 1) {
+      setStatus({ text: 'Dwell time must be an integer ≥ 1.', kind: 'error' });
+      return;
+    }
+    if (!Number.isInteger(localForm.inactiveTimeoutMin) || localForm.inactiveTimeoutMin < 1) {
+      setStatus({ text: 'Inactive tab timeout must be an integer ≥ 1.', kind: 'error' });
+      return;
+    }
     setSaving(true);
     setStatus({ text: 'Saving…', kind: '' });
 
@@ -80,6 +98,10 @@ function SettingsPanel() {
         updated_at: new Date().toISOString(),
       }),
       setRemoveReadingListAfterSend(removeReadingListAfterSend),
+      setLocalSettings({
+        dwellTimeMin: localForm.dwellTimeMin,
+        inactiveTimeoutMin: localForm.inactiveTimeoutMin,
+      }),
     ]);
 
     if (upsertError) {
@@ -116,6 +138,38 @@ function SettingsPanel() {
             setForm((current) => ({
               ...current,
               resources_per_newsletter: Number.parseInt(e.currentTarget.value, 10),
+            }));
+          }}
+        />
+      </div>
+      <div class="field">
+        <label for="dwell">Dwell time before save prompt (min)</label>
+        <input
+          type="number"
+          id="dwell"
+          min="1"
+          step="1"
+          value={localForm.dwellTimeMin}
+          onInput={(e) => {
+            setLocalForm((current) => ({
+              ...current,
+              dwellTimeMin: Number.parseInt(e.currentTarget.value, 10),
+            }));
+          }}
+        />
+      </div>
+      <div class="field">
+        <label for="inactive">Inactive tab timeout (min)</label>
+        <input
+          type="number"
+          id="inactive"
+          min="1"
+          step="1"
+          value={localForm.inactiveTimeoutMin}
+          onInput={(e) => {
+            setLocalForm((current) => ({
+              ...current,
+              inactiveTimeoutMin: Number.parseInt(e.currentTarget.value, 10),
             }));
           }}
         />

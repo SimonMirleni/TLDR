@@ -185,6 +185,71 @@ summary:focus-visible {
   flex: 1;
 }
 
+/* ── Suggested tabs ──────────────────────────────────── */
+.suggested {
+  margin-bottom: 12px;
+}
+
+.suggested-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0 0 6px 0;
+}
+
+.suggested-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  border-top: 1px solid var(--border);
+}
+
+.suggested-item {
+  border-bottom: 1px solid var(--border);
+  padding: 9px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.suggested-meta {
+  flex: 1;
+  min-width: 0;
+}
+
+.suggested-meta .url {
+  display: block;
+  font-weight: 600;
+  font-size: 12px;
+  line-height: 1.35;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--fg);
+}
+
+.suggested-meta .date {
+  display: block;
+  color: var(--muted);
+  font-size: 11px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.suggested-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.suggested-actions button {
+  padding: 5px 8px;
+  font-size: 11px;
+}
+
 /* ── Queue list ──────────────────────────────────────── */
 .queue-list {
   list-style: none;

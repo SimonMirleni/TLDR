@@ -1,4 +1,6 @@
 import { sendNewsletter } from '@/lib/api';
+import type { DetectedTab } from '@/lib/detected-tabs';
+import { removeDetectedTab, syncBadge } from '@/lib/detected-tabs';
 import {
   type ReadingListEntry,
   captureReadingListEntry,
@@ -7,8 +9,9 @@ import {
   listUnreadReadingListEntries,
   removeReadingListUrls,
 } from '@/lib/reading-list';
-import { scrapeActiveTab } from '@/lib/scrape';
+import { scrapeActiveTab, scrapeTab } from '@/lib/scrape';
 import { supabase } from '@/lib/supabase';
+import { dismissUrl, markSaved } from '@/lib/suppress';
 import type { Resource } from '@rld/db';
 import { useCallback, useEffect, useState } from 'preact/hooks';
 
@@ -23,6 +26,7 @@ function Queue() {
   const [rows, setRows] = useState<QueueRow[]>([]);
   const [importableEntries, setImportableEntries] = useState<ReadingListEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [suggested, setSuggested] = useState<DetectedTab[]>([]);
   const [busy, setBusy] = useState<'add' | 'import' | 'send' | null>(null);
   const [status, setStatus] = useState<{ text: string; kind: StatusKind }>({ text: '', kind: '' });
 
@@ -59,6 +63,13 @@ function Queue() {
 
   useEffect(() => {
     void refresh();
+
+    void (async () => {
+      const result = await chrome.storage.local.get('rl_detected_tabs');
+      setSuggested(
+        Array.isArray(result.rl_detected_tabs) ? (result.rl_detected_tabs as DetectedTab[]) : [],
+      );
+    })();
   }, [refresh]);
 
   const handleAdd = async () => {
@@ -68,6 +79,7 @@ function Queue() {
       const { url, content } = await scrapeActiveTab();
       const { error } = await supabase.from('resources').insert({ url, content } as never);
       if (error) throw new Error(error.message);
+      await markSaved(url);
       setStatus({ text: 'Saved.', kind: 'success' });
       await refresh();
     } catch (err) {
@@ -147,6 +159,36 @@ function Queue() {
     }
   };
 
+  const handleSaveSuggested = async (tab: DetectedTab) => {
+    setBusy('add');
+    setStatus({ text: 'Capturando…', kind: '' });
+    try {
+      const { content } = await scrapeTab(tab.tabId, tab.url);
+      const { error } = await supabase.from('resources').insert({ url: tab.url, content } as never);
+      if (error) throw new Error(error.message);
+      await markSaved(tab.url);
+      await chrome.tabs.remove(tab.tabId);
+      await removeSuggested(tab.tabId);
+      setStatus({ text: 'Guardado.', kind: 'success' });
+      await refresh();
+    } catch (err) {
+      setStatus({ text: err instanceof Error ? err.message : String(err), kind: 'error' });
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const handleDismissSuggested = async (tab: DetectedTab) => {
+    await dismissUrl(tab.url);
+    await removeSuggested(tab.tabId);
+  };
+
+  async function removeSuggested(tabId: number) {
+    await removeDetectedTab(tabId);
+    await syncBadge();
+    setSuggested((prev) => prev.filter((t) => t.tabId !== tabId));
+  }
+
   return (
     <>
       <div class="row">
@@ -172,8 +214,55 @@ function Queue() {
       <p id="status" class={`status${status.kind ? ` ${status.kind}` : ''}`}>
         {status.text}
       </p>
+      {suggested.length > 0 && (
+        <SuggestedList
+          tabs={suggested}
+          busy={busy !== null}
+          onSave={handleSaveSuggested}
+          onDismiss={handleDismissSuggested}
+        />
+      )}
       <QueueList rows={rows} loading={loading} />
     </>
+  );
+}
+
+function SuggestedList({
+  tabs,
+  busy,
+  onSave,
+  onDismiss,
+}: {
+  tabs: DetectedTab[];
+  busy: boolean;
+  onSave: (tab: DetectedTab) => Promise<void>;
+  onDismiss: (tab: DetectedTab) => Promise<void>;
+}) {
+  return (
+    <div class="suggested">
+      <p class="suggested-label">Tabs sin leer</p>
+      <ul class="suggested-list">
+        {tabs.map((tab) => {
+          const shortUrl = tab.url.length > 52 ? `${tab.url.slice(0, 49)}…` : tab.url;
+          return (
+            <li key={tab.tabId} class="suggested-item">
+              <div class="suggested-meta">
+                <span class="url">{tab.title || shortUrl}</span>
+                <span class="date">{shortUrl}</span>
+              </div>
+              <div class="suggested-actions">
+                <button type="button" class="primary" disabled={busy} onClick={() => onSave(tab)}>
+                  Guardar
+                </button>
+                <button type="button" disabled={busy} onClick={() => onDismiss(tab)}>
+                  Ignorar
+                </button>
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
   );
 }
 
