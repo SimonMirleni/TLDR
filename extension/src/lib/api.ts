@@ -2,7 +2,7 @@ import { BACKEND_URL } from './env';
 import { supabase } from './supabase';
 
 export type SendResult =
-  | { sent: true; emailId: string; consumedCount: number }
+  | { sent: true; emailId: string; consumedCount: number; consumedUrls: string[] }
   | { sent: false; reason: 'no_pending' };
 
 export async function sendNewsletter(): Promise<SendResult> {

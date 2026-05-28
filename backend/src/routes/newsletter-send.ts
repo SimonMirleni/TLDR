@@ -97,5 +97,6 @@ export async function newsletterSend(c: Context<AuthedEnv>): Promise<Response> {
     sent: true as const,
     emailId,
     consumedCount: resources.length,
+    consumedUrls: resources.map((r) => r.url),
   });
 }

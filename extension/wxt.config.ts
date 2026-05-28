@@ -48,7 +48,7 @@ export default defineConfig({
     action: {
       default_title: 'TLDR',
     },
-    permissions: ['identity', 'activeTab', 'scripting', 'storage', 'tabs'],
+    permissions: ['identity', 'activeTab', 'scripting', 'storage', 'tabs', 'readingList'],
     oauth2: {
       client_id: googleClientId,
       scopes: ['openid', 'email', 'profile'],

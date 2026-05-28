@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="ReadLater Digest saves pages into a queue and turns the oldest pending reads into one AI newsletter on demand."
+    />
+    <title>ReadLater Digest</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="#top">ReadLater Digest</a>
+      <nav aria-label="Main navigation">
+        <a href="#workflow">Workflow</a>
+        <a href="#features">Features</a>
+        <a href="#digest">Digest</a>
+      </nav>
+    </header>
+
+    <main id="top">
+      <section class="hero shell">
+        <div class="hero-copy">
+          <p class="eyebrow">Chrome extension + newsletter</p>
+          <h1>Turn saved pages into one quiet reading digest.</h1>
+          <p class="lead">
+            Capture articles as you browse, keep them in a simple FIFO queue,
+            then send the oldest pending reads to your inbox as a concise AI
+            summary.
+          </p>
+          <div class="actions" aria-label="Primary actions">
+            <a class="button primary" href="#workflow">See how it works</a>
+            <a class="button" href="#digest">Preview the email</a>
+          </div>
+        </div>
+
+        <aside class="extension-card" aria-label="Extension popup preview">
+          <div class="popup-bar">
+            <span>Signed in as</span>
+            <strong>you@example.com</strong>
+          </div>
+          <div class="tabs" aria-hidden="true">
+            <span class="active">Queue</span>
+            <span>Settings</span>
+          </div>
+          <div class="button-row">
+            <span class="mini-button filled">Add current page</span>
+            <span class="mini-button">Send newsletter</span>
+          </div>
+          <ul class="queue-preview" aria-label="Pending reading queue preview">
+            <li>
+              <span class="url">example.com/long-read</span>
+              <time>Oldest pending</time>
+            </li>
+            <li>
+              <span class="url">notes.example.com/research</span>
+              <time>Next in queue</time>
+            </li>
+            <li>
+              <span class="url">blog.example.com/essay</span>
+              <time>Ready for digest</time>
+            </li>
+          </ul>
+        </aside>
+      </section>
+
+      <section id="workflow" class="workflow shell section">
+        <p class="eyebrow">Workflow</p>
+        <div class="section-heading">
+          <h2>Save now. Read later. Digest when ready.</h2>
+          <p>
+            ReadLater Digest is intentionally on demand. Nothing is scheduled,
+            selected, or reshuffled for you.
+          </p>
+        </div>
+        <div class="steps" aria-label="Product workflow">
+          <article>
+            <span>01</span>
+            <h3>Capture the page</h3>
+            <p>
+              Save the current tab text from the popup, or import unread Chrome
+              Reading List items.
+            </p>
+          </article>
+          <article>
+            <span>02</span>
+            <h3>Keep a pending queue</h3>
+            <p>
+              Saved resources stay pending in oldest-first order until they are
+              included in a digest.
+            </p>
+          </article>
+          <article>
+            <span>03</span>
+            <h3>Send one newsletter</h3>
+            <p>
+              The backend summarizes the next N resources and emails the result
+              to your Google address.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section id="features" class="features shell section">
+        <p class="eyebrow">What it can do</p>
+        <div class="feature-grid">
+          <article>
+            <h3>Current-page saving</h3>
+            <p>
+              Capture the active tab text directly from the extension popup.
+            </p>
+          </article>
+          <article>
+            <h3>Reading List import</h3>
+            <p>
+              Bring unread Chrome Reading List entries into the same digest
+              queue.
+            </p>
+          </article>
+          <article>
+            <h3>New-tab previews</h3>
+            <p>
+              See pending reads as quick preview cards whenever you open a new
+              tab.
+            </p>
+          </article>
+          <article>
+            <h3>Custom digest controls</h3>
+            <p>
+              Choose how many resources go into each newsletter and set the
+              summary tone prompt.
+            </p>
+          </article>
+          <article>
+            <h3>FIFO by design</h3>
+            <p>
+              The send flow selects the oldest pending resources first, with no
+              manual picking.
+            </p>
+          </article>
+          <article>
+            <h3>Consumed after send</h3>
+            <p>
+              Sent resources leave the pending queue so the next digest moves
+              forward.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section id="digest" class="digest-section shell section">
+        <div class="section-heading compact">
+          <p class="eyebrow">Email output</p>
+          <h2>A calm inbox version of your backlog.</h2>
+          <p>
+            Each digest keeps the original links, adds short summaries, and
+            highlights the main points.
+          </p>
+        </div>
+
+        <article class="email-preview" aria-label="Sample digest email">
+          <header>
+            <span>TLDR DIGEST</span>
+            <time>Today</time>
+          </header>
+          <div class="email-article">
+            <h3>The hidden cost of context switching</h3>
+            <p>
+              A concise summary captures the core argument, so you can decide
+              whether the original article deserves a full read.
+            </p>
+            <ul>
+              <li>Preserves the source URL for follow-up reading.</li>
+              <li>Extracts practical takeaways from long-form text.</li>
+              <li>Uses your saved tone prompt for the final voice.</li>
+            </ul>
+            <a href="#top">Read original</a>
+          </div>
+          <div class="email-footer">
+            3 articles from your queue · ReadLater Digest
+          </div>
+        </article>
+      </section>
+    </main>
+
+    <footer class="site-footer shell">
+      <p>
+        Built for a small loop: save text, summarize on demand, email the OAuth
+        address, and mark delivered resources as consumed.
+      </p>
+    </footer>
+  </body>
+</html>

@@ -1,3 +1,4 @@
+import { getRemoveReadingListAfterSend, setRemoveReadingListAfterSend } from '@/lib/reading-list';
 import { supabase } from '@/lib/supabase';
 import { DEFAULT_RESOURCES_PER_NEWSLETTER, DEFAULT_TONE_PROMPT, type Settings } from '@rld/db';
 import { useEffect, useState } from 'preact/hooks';
@@ -17,6 +18,7 @@ function SettingsPanel() {
   });
   const [status, setStatus] = useState<{ text: string; kind: StatusKind }>({ text: '', kind: '' });
   const [saving, setSaving] = useState(false);
+  const [removeReadingListAfterSend, setRemoveReadingListAfterSendState] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -46,6 +48,11 @@ function SettingsPanel() {
       if (data) {
         setForm(data);
       }
+
+      const removeAfterSend = await getRemoveReadingListAfterSend();
+      if (!cancelled) {
+        setRemoveReadingListAfterSendState(removeAfterSend);
+      }
     };
 
     void loadSettings();
@@ -65,12 +72,15 @@ function SettingsPanel() {
     setSaving(true);
     setStatus({ text: 'Saving…', kind: '' });
 
-    const { error: upsertError } = await supabase.from('settings').upsert({
-      user_id: user.id,
-      tone_prompt: form.tone_prompt,
-      resources_per_newsletter: rpn,
-      updated_at: new Date().toISOString(),
-    });
+    const [{ error: upsertError }] = await Promise.all([
+      supabase.from('settings').upsert({
+        user_id: user.id,
+        tone_prompt: form.tone_prompt,
+        resources_per_newsletter: rpn,
+        updated_at: new Date().toISOString(),
+      }),
+      setRemoveReadingListAfterSend(removeReadingListAfterSend),
+    ]);
 
     if (upsertError) {
       setStatus({ text: upsertError.message, kind: 'error' });
@@ -121,6 +131,16 @@ function SettingsPanel() {
           }}
         />
       </div>
+      <label class="checkbox-field">
+        <input
+          type="checkbox"
+          checked={removeReadingListAfterSend}
+          onChange={(e) => {
+            setRemoveReadingListAfterSendState(e.currentTarget.checked);
+          }}
+        />
+        <span>Remove from Chrome Reading List after newsletter is sent</span>
+      </label>
       <button type="button" id="save" class="primary" disabled={saving} onClick={handleSave}>
         {saving ? 'Saving...' : 'Save'}
       </button>
